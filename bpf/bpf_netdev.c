@@ -616,6 +616,7 @@ static __always_inline int do_netdev_encrypt(struct __sk_buff *skb, __u16 proto)
 
 static __always_inline int do_netdev(struct __sk_buff *skb, __u16 proto)
 {
+
 	__u32 identity = 0;
 	int ret;
 
