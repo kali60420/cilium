@@ -1,0 +1,81 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  jobs-amd64:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-18.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    - uses: actions/create-release@v1.0.1
+
+    - name: Login to DockerHub Registry
+      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      
+    # Runs a single command using the runners shell
+    - name: Run a one-line script
+      run: echo Jianlin Hello, world!
+
+    # Buildx Plugin install
+    - name: install buildx
+      run: |
+        export DOCKER_BUILDKIT=1
+        git clone git://github.com/docker/buildx ./docker-buildx
+        docker build --platform=local -o . ./docker-buildx
+        mkdir -p ~/.docker/cli-plugins
+        mv buildx ~/.docker/cli-plugins/docker-buildx
+        docker version
+        docker help
+
+    - name: buildx toy example
+      run: |
+        docker buildx rm  multi-builder | true
+        docker buildx create --use --name multi-builder --platform linux/arm64,linux/amd64
+        #docker buildx build --platform linux/amd64 --build-arg ARCH=amd64 --push -f Dockerfile.builder . -t iecedge/cilium-builder:2020-4-30-amd64-buildx
+        docker buildx build --platform linux/arm64 --build-arg ARCH=arm64 --push -f Dockerfile.builder . -t iecedge/cilium-builder:2020-4-30-arm64-buildx
+
+      #- name: Build cilium builder docker
+      #run: docker build -t "cilium/cilium-builder:2020-04-27-amd64" -f Dockerfile.builder .
+
+      #- name: Push image
+      #run: |
+      #  ls
+        #docker buildx build --platform linux/amd64,linux/arm64  --push -f Dockerfile.builder . -t iecedge/cilium-builder
+        #docker tag cilium/cilium-builder:2020-04-27-amd64 iecedge/cilium-builder:2020-04-27-amd64
+        #docker push iecedge/cilium-builder:2020-04-27-amd64
+        #./build_docker.sh
+
+  jobs-arm64:
+    runs-on: [self-hosted, Linux, ARM64]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Login to DockerHub Registry
+      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+    - name: Build cilium-builder arm64
+      run: |
+        sudo docker version
+        sudo docker help
+        sudo docker buildx rm  multi-builder | true
+        sudo docker buildx create --use --name multi-builder
+        sudo docker buildx build --platform linux/arm64 --build-arg ARCH=arm64 --push -f Dockerfile.builder . -t iecedge/cilium-builder:2020-4-30-arm64-buildx
+
+        #sudo docker build --build-arg ARCH=arm64 -t "cilium/cilium-builder:2020-04-27-arm64" -f Dockerfile.builder .
+        #sudo docker tag cilium/cilium-builder:2020-04-27-arm64 iecedge/cilium-builder:2020-04-27-arm64
+        #sudo docker push iecedge/cilium-builder:2020-04-27-arm64
+        #sudo ./build_docker.sh
