@@ -1,8 +1,11 @@
-FROM docker.io/library/python:3.7.9-alpine3.11
+#FROM arm64v8/ubuntu:20.04
+FROM docker.io/library/ubuntu:20.04
 
 LABEL maintainer="maintainer@cilium.io"
 
-RUN apk add --no-cache --virtual --update \
+ENV TZ=Europe/Kiev
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt update && apt-get install -y --no-install-recommends \
     aspell-en \
     nodejs \
     npm \
@@ -10,14 +13,13 @@ RUN apk add --no-cache --virtual --update \
     ca-certificates \
     enchant \
     git \
-    libc6-compat \
-    py-pip \
-    python \
-    sphinx-python \
+    python3-pip \
+    python3 \
+    python3-sphinx \
     && true
 
 ADD ./requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
 
 ENV HOME=/tmp
 ENV READTHEDOCS_VERSION=$READTHEDOCS_VERSION
