@@ -4,7 +4,7 @@ set -o errexit
 
 export CFLAGS="-Werror"
 
-cat /boot/config-`uname -r` |grep -i 48
+# cat /boot/config-`uname -r` |grep -i 48
 make -j 2
 #make unit-tests
 
